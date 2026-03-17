@@ -47,6 +47,7 @@ api.post('/shorten', async (req, res) => {
 
   // const code = randomCode(6).toLowerCase();
   const code = (req.body.customCode || randomCode(6)).toLowerCase();
+  // const code = randomCode(6);
   await redis.set(code, url);
 
   return res.status(200).json({ code, short: `/${code}` });
@@ -81,12 +82,14 @@ app.use('/ui', express.static(path.join(__dirname, '../www')));
 
 // short URL redirect — must be last
 app.get('/:code', async (req, res) => {
-  const url = await redis.get(req.params.code);
+  const code = req.params.code;
+  const url = await redis.get(code);
 
   if (!url) {
     return res.status(404).json({ error: 'Not found' });
   }
 
+  redis.incrementClick(code);
   return res.redirect(302, url);
 });
 
